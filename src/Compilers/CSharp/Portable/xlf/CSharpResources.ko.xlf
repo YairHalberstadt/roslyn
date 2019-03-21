@@ -277,6 +277,11 @@
         <target state="translated">단일 요소 분해 패턴은 명확성을 위해 다른 구문이 필요합니다. 닫는 괄호 ')' 뒤에 무시 항목 지정자 '_'을 추가하는 것이 좋습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ERR_SizeOfReferenceType">
+        <source>'sizeof({0})' is not allowed as '{0}' is known to be a reference type. Use 'System.IntPtr.Size' instead.</source>
+        <target state="new">'sizeof({0})' is not allowed as '{0}' is known to be a reference type. Use 'System.IntPtr.Size' instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ERR_StaticLocalFunctionCannotCaptureThis">
         <source>A static local function cannot contain a reference to 'this' or 'base'.</source>
         <target state="translated">정적 로컬 함수는 'this' 또는 'base'에 대한 참조를 포함할 수 없습니다.</target>
@@ -745,6 +750,16 @@
       <trans-unit id="IDS_FeatureRefReassignment">
         <source>ref reassignment</source>
         <target state="translated">ref 다시 할당</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IDS_FeatureSizeOfAnyValueType">
+        <source>sizeof any ValueType</source>
+        <target state="new">sizeof any ValueType</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IDS_FeatureSizeOfInAnyContext">
+        <source>sizeof in any context</source>
+        <target state="new">sizeof in any context</target>
         <note />
       </trans-unit>
       <trans-unit id="IDS_FeatureStackAllocInitializer">
@@ -2660,11 +2675,6 @@
       <trans-unit id="ERR_ParamsLast">
         <source>A params parameter must be the last parameter in a formal parameter list</source>
         <target state="translated">params 매개 변수는 정식 매개 변수 목록에서 마지막에 있어야 합니다.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ERR_SizeofUnsafe">
-        <source>'{0}' does not have a predefined size, therefore sizeof can only be used in an unsafe context</source>
-        <target state="needs-review-translation">'{0}'에 미리 정의된 크기가 없으므로 sizeof는 안전하지 않은 컨텍스트에서만 사용할 수 있습니다. System.Runtime.InteropServices.Marshal.SizeOf를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ERR_DottedTypeNameNotFoundInNS">

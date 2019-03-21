@@ -14,9 +14,6 @@ using Xunit;
 
 namespace Microsoft.CodeAnalysis.CSharp.UnitTests
 {
-    /// <summary>
-    /// Tests related to binding (but not lowering) lock statements.
-    /// </summary>
     public class UnsafeTests : CompilingTestBase
     {
         private static string GetEscapedNewLine()
@@ -1516,21 +1513,21 @@ class C : I
             CompareUnsafeDiagnostics(template, expectedWithoutUnsafe, new DiagnosticDescription[0]);
         }
 
-        private static void CompareUnsafeDiagnostics(string template, DiagnosticDescription[] expectedWithoutUnsafe, DiagnosticDescription[] expectedWithUnsafe)
+        private static void CompareUnsafeDiagnostics(string template, DiagnosticDescription[] expectedWithoutUnsafe, DiagnosticDescription[] expectedWithUnsafe, CSharpParseOptions parseOptions = default)
         {
             // NOTE: ERR_UnsafeNeeded is not affected by the presence/absence of the /unsafe flag.
             var withoutUnsafe = string.Format(template, "", "");
-            CreateCompilation(withoutUnsafe).VerifyDiagnostics(expectedWithoutUnsafe);
-            CreateCompilation(withoutUnsafe, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedWithoutUnsafe);
+            CreateCompilation(withoutUnsafe, parseOptions: parseOptions).VerifyDiagnostics(expectedWithoutUnsafe);
+            CreateCompilation(withoutUnsafe, options: TestOptions.UnsafeReleaseDll, parseOptions: parseOptions).VerifyDiagnostics(expectedWithoutUnsafe);
 
             var withUnsafeOnType = string.Format(template, "unsafe", "");
-            CreateCompilation(withUnsafeOnType, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedWithUnsafe);
+            CreateCompilation(withUnsafeOnType, options: TestOptions.UnsafeReleaseDll, parseOptions: parseOptions).VerifyDiagnostics(expectedWithUnsafe);
 
             var withUnsafeOnMembers = string.Format(template, "", "unsafe");
-            CreateCompilation(withUnsafeOnMembers, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedWithUnsafe);
+            CreateCompilation(withUnsafeOnMembers, options: TestOptions.UnsafeReleaseDll, parseOptions: parseOptions).VerifyDiagnostics(expectedWithUnsafe);
 
             var withUnsafeOnTypeAndMembers = string.Format(template, "unsafe", "unsafe");
-            CreateCompilation(withUnsafeOnTypeAndMembers, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(expectedWithUnsafe);
+            CreateCompilation(withUnsafeOnTypeAndMembers, options: TestOptions.UnsafeReleaseDll, parseOptions: parseOptions).VerifyDiagnostics(expectedWithUnsafe);
         }
 
         [WorkItem(544097, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/544097")]
@@ -7197,7 +7194,7 @@ unsafe class C
         #region sizeof diagnostic tests
 
         [Fact]
-        public void SizeOfManaged()
+        public void SizeOfManagedCSharpSeven()
         {
             var text = @"
 unsafe class C
@@ -7216,20 +7213,20 @@ public struct S
     public string s;
 }
 ";
-            CreateCompilation(text, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
-                // (7,13): error CS0208: Cannot take the address of, get the size of, or declare a pointer to a managed type ('T')
+            CreateCompilation(text, options: TestOptions.UnsafeReleaseDll, parseOptions: new CSharpParseOptions(LanguageVersion.CSharp7_3)).VerifyDiagnostics(
+                // (7,13): error CS8652: The feature 'sizeof any ValueType' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
                 //         x = sizeof(T); //CS0208
-                Diagnostic(ErrorCode.ERR_ManagedAddr, "sizeof(T)").WithArguments("T"),
-                // (8,13): error CS0208: Cannot take the address of, get the size of, or declare a pointer to a managed type ('C')
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "sizeof(T)").WithArguments("sizeof any ValueType").WithLocation(7, 13),
+                // (8,13): error CS8424: 'sizeof(C)' is not allowed as 'C' is known to be a reference type. Use 'System.IntPtr.Size' instead.
                 //         x = sizeof(C); //CS0208
-                Diagnostic(ErrorCode.ERR_ManagedAddr, "sizeof(C)").WithArguments("C"),
-                // (9,13): error CS0208: Cannot take the address of, get the size of, or declare a pointer to a managed type ('S')
+                Diagnostic(ErrorCode.ERR_SizeOfReferenceType, "sizeof(C)").WithArguments("C").WithLocation(8, 13),
+                // (9,13): error CS8652: The feature 'sizeof any ValueType' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
                 //         x = sizeof(S); //CS0208
-                Diagnostic(ErrorCode.ERR_ManagedAddr, "sizeof(S)").WithArguments("S"));
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "sizeof(S)").WithArguments("sizeof any ValueType").WithLocation(9, 13));
         }
 
         [Fact]
-        public void SizeOfUnsafe1()
+        public void SizeOfUnsafeCSharpSeven1()
         {
             var template = @"
 {0} struct S
@@ -7242,13 +7239,16 @@ public struct S
 }}
 ";
             CompareUnsafeDiagnostics(template,
-                // (7,13): error CS0233: 'S' does not have a predefined size, therefore sizeof can only be used in an unsafe context (consider using System.Runtime.InteropServices.Marshal.SizeOf)
-                //         x = sizeof(S);
-                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(S)").WithArguments("S"));
+                new [] {
+                // (7,13): error CS8652: The feature 'sizeof in any context' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //         x = sizeof(S); // Type isn't unsafe, but expression is.
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "sizeof(S)").WithArguments("sizeof in any context").WithLocation(7, 13)},
+                new DiagnosticDescription[0],
+                parseOptions: new CSharpParseOptions(LanguageVersion.CSharp7_3));
         }
 
         [Fact]
-        public void SizeOfUnsafe2()
+        public void SizeOfUnsafeCSharpSeven2()
         {
             var template = @"
 {0} class C
@@ -7265,41 +7265,44 @@ public struct S
 ";
             // CONSIDER: Dev10 reports ERR_SizeofUnsafe for each sizeof, but that seems redundant.
             CompareUnsafeDiagnostics(template,
+                new[] {
                 // (7,20): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         x = sizeof(int*);
-                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*"),
-                // (7,13): error CS0233: 'int*' does not have a predefined size, therefore sizeof can only be used in an unsafe context (consider using System.Runtime.InteropServices.Marshal.SizeOf)
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(7, 20),
+                // (7,13): error CS8652: The feature 'sizeof in any context' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
                 //         x = sizeof(int*);
-                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(int*)").WithArguments("int*"),
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "sizeof(int*)").WithArguments("sizeof in any context").WithLocation(7, 13),
                 // (8,20): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         x = sizeof(int**);
-                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*"),
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int*").WithLocation(8, 20),
                 // (8,20): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         x = sizeof(int**);
-                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int**"),
-                // (8,13): error CS0233: 'int**' does not have a predefined size, therefore sizeof can only be used in an unsafe context (consider using System.Runtime.InteropServices.Marshal.SizeOf)
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "int**").WithLocation(8, 20),
+                // (8,13): error CS8652: The feature 'sizeof in any context' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
                 //         x = sizeof(int**);
-                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(int**)").WithArguments("int**"),
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "sizeof(int**)").WithArguments("sizeof in any context").WithLocation(8, 13),
                 // (9,20): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         x = sizeof(void*);
-                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "void*"),
-                // (9,13): error CS0233: 'void*' does not have a predefined size, therefore sizeof can only be used in an unsafe context (consider using System.Runtime.InteropServices.Marshal.SizeOf)
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "void*").WithLocation(9, 20),
+                // (9,13): error CS8652: The feature 'sizeof in any context' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
                 //         x = sizeof(void*);
-                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(void*)").WithArguments("void*"),
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "sizeof(void*)").WithArguments("sizeof in any context").WithLocation(9, 13),
                 // (10,20): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         x = sizeof(void**);
-                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "void*"),
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "void*").WithLocation(10, 20),
                 // (10,20): error CS0214: Pointers and fixed size buffers may only be used in an unsafe context
                 //         x = sizeof(void**);
-                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "void**"),
-                // (10,13): error CS0233: 'void**' does not have a predefined size, therefore sizeof can only be used in an unsafe context (consider using System.Runtime.InteropServices.Marshal.SizeOf)
+                Diagnostic(ErrorCode.ERR_UnsafeNeeded, "void**").WithLocation(10, 20),
+                // (10,13): error CS8652: The feature 'sizeof in any context' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
                 //         x = sizeof(void**);
-                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(void**)").WithArguments("void**")
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "sizeof(void**)").WithArguments("sizeof in any context").WithLocation(10, 13)},
+                new DiagnosticDescription[0],
+                parseOptions: new CSharpParseOptions(LanguageVersion.CSharp7_3)
                 );
         }
 
         [Fact]
-        public void SizeOfUnsafeInIterator()
+        public void SizeOfUnsafeInIteratorCSharpSeven()
         {
             var text = @"
 struct S
@@ -7310,125 +7313,10 @@ struct S
     }
 }
 ";
-            CreateCompilation(text).VerifyDiagnostics(
-                // (6,22): error CS1629: Unsafe code may not appear in iterators
+            CreateCompilation(text, parseOptions: new CSharpParseOptions(LanguageVersion.CSharp7_3)).VerifyDiagnostics(
+                // (6,22): error CS8652: The feature 'sizeof in any context' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
                 //         yield return sizeof(S);
-                Diagnostic(ErrorCode.ERR_IllegalInnerUnsafe, "sizeof(S)"));
-        }
-
-        [Fact]
-        public void SizeOfNonType1()
-        {
-            var text = @"
-unsafe struct S
-{
-    void M()
-    {
-        S s = new S();
-        int i = 0;
-
-        i = sizeof(s);
-        i = sizeof(i);
-        i = sizeof(M);
-    }
-}
-";
-            // Not identical to Dev10, but same meaning.
-            CreateCompilation(text, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
-                // (9,20): error CS0118: 's' is a variable but is used like a type
-                //         i = sizeof(s);
-                Diagnostic(ErrorCode.ERR_BadSKknown, "s").WithArguments("s", "variable", "type"),
-                // (10,20): error CS0118: 'i' is a variable but is used like a type
-                //         i = sizeof(i);
-                Diagnostic(ErrorCode.ERR_BadSKknown, "i").WithArguments("i", "variable", "type"),
-                // (11,20): error CS0246: The type or namespace name 'M' could not be found (are you missing a using directive or an assembly reference?)
-                //         i = sizeof(M);
-                Diagnostic(ErrorCode.ERR_SingleTypeNameNotFound, "M").WithArguments("M"),
-                // (6,11): warning CS0219: The variable 's' is assigned but its value is never used
-                //         S s = new S();
-                Diagnostic(ErrorCode.WRN_UnreferencedVarAssg, "s").WithArguments("s"));
-        }
-
-        [Fact]
-        public void SizeOfNonType2()
-        {
-            var text = @"
-unsafe struct S
-{
-    void M()
-    {
-        int i;
-        i = sizeof(void);
-        i = sizeof(this); //parser error
-        i = sizeof(x => x); //parser error
-    }
-}
-";
-            // Not identical to Dev10, but same meaning.
-            CreateCompilation(text, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
-                // (7,20): error CS1547: Keyword 'void' cannot be used in this context
-                //         i = sizeof(void);
-                Diagnostic(ErrorCode.ERR_NoVoidHere, "void"),
-                // (8,20): error CS1031: Type expected
-                //         i = sizeof(this); //parser error
-                Diagnostic(ErrorCode.ERR_TypeExpected, "this"),
-                // (8,20): error CS1026: ) expected
-                //         i = sizeof(this); //parser error
-                Diagnostic(ErrorCode.ERR_CloseParenExpected, "this"),
-                // (8,20): error CS1002: ; expected
-                //         i = sizeof(this); //parser error
-                Diagnostic(ErrorCode.ERR_SemicolonExpected, "this"),
-                // (8,24): error CS1002: ; expected
-                //         i = sizeof(this); //parser error
-                Diagnostic(ErrorCode.ERR_SemicolonExpected, ")"),
-                // (8,24): error CS1513: } expected
-                //         i = sizeof(this); //parser error
-                Diagnostic(ErrorCode.ERR_RbraceExpected, ")"),
-                // (9,22): error CS1026: ) expected
-                //         i = sizeof(x => x); //parser error
-                Diagnostic(ErrorCode.ERR_CloseParenExpected, "=>"),
-                // (9,22): error CS1002: ; expected
-                //         i = sizeof(x => x); //parser error
-                Diagnostic(ErrorCode.ERR_SemicolonExpected, "=>"),
-                // (9,22): error CS1513: } expected
-                //         i = sizeof(x => x); //parser error
-                Diagnostic(ErrorCode.ERR_RbraceExpected, "=>"),
-                // (9,26): error CS1002: ; expected
-                //         i = sizeof(x => x); //parser error
-                Diagnostic(ErrorCode.ERR_SemicolonExpected, ")"),
-                // (9,26): error CS1513: } expected
-                //         i = sizeof(x => x); //parser error
-                Diagnostic(ErrorCode.ERR_RbraceExpected, ")"),
-                // (9,20): error CS0246: The type or namespace name 'x' could not be found (are you missing a using directive or an assembly reference?)
-                //         i = sizeof(x => x); //parser error
-                Diagnostic(ErrorCode.ERR_SingleTypeNameNotFound, "x").WithArguments("x"),
-                // (9,25): error CS0103: The name 'x' does not exist in the current context
-                //         i = sizeof(x => x); //parser error
-                Diagnostic(ErrorCode.ERR_NameNotInContext, "x").WithArguments("x"));
-        }
-
-        [Fact, WorkItem(529318, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/529318")]
-        public void SizeOfNull()
-        {
-            string text = @"
-class Program
-{
-    int F1 = sizeof(null);
-}
-";
-            CreateCompilation(text, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
-            // (4,21): error CS1031: Type expected
-            //     int F1 = sizeof(null);
-            Diagnostic(ErrorCode.ERR_TypeExpected, "null"),
-            // (4,21): error CS1026: ) expected
-            //     int F1 = sizeof(null);
-            Diagnostic(ErrorCode.ERR_CloseParenExpected, "null"),
-            // (4,21): error CS1003: Syntax error, ',' expected
-            //     int F1 = sizeof(null);
-            Diagnostic(ErrorCode.ERR_SyntaxError, "null").WithArguments(",", "null"),
-            // (4,14): error CS0233: '?' does not have a predefined size, therefore sizeof can only be used in an unsafe context (consider using System.Runtime.InteropServices.Marshal.SizeOf)
-            //     int F1 = sizeof(null);
-            Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(").WithArguments("?"));
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "sizeof(S)").WithArguments("sizeof in any context").WithLocation(6, 22));
         }
 
         #endregion sizeof diagnostic tests
@@ -7453,7 +7341,7 @@ class Program
         };
 
         [Fact]
-        public void SizeOfSemanticModelSafe()
+        public void SizeOfSemanticModelSafeCSharpSeven()
         {
             var text = @"
 class Program
@@ -7478,7 +7366,7 @@ class Program
 }
 ";
             // NB: not unsafe
-            var compilation = CreateCompilation(text);
+            var compilation = CreateCompilation(text, parseOptions: new CSharpParseOptions(LanguageVersion.CSharp7_3));
             var tree = compilation.SyntaxTrees.Single();
             var model = compilation.GetSemanticModel(tree);
 
@@ -7517,7 +7405,7 @@ class Program
         }
 
         [Fact]
-        public void SizeOfSemanticModelEnum()
+        public void SizeOfSemanticModelEnumCSharpSeven()
         {
             var text = @"
 class Program
@@ -7541,7 +7429,7 @@ enum E2 : long
 }
 ";
             // NB: not unsafe
-            var compilation = CreateCompilation(text);
+            var compilation = CreateCompilation(text, parseOptions: new CSharpParseOptions(LanguageVersion.CSharp7_3));
             var tree = compilation.SyntaxTrees.Single();
             var model = compilation.GetSemanticModel(tree);
 
@@ -7580,7 +7468,7 @@ enum E2 : long
         }
 
         [Fact]
-        public void SizeOfSemanticModelUnsafe()
+        public void SizeOfSemanticModelUnsafeCSharpSeven()
         {
             var text = @"
 struct Outer
@@ -7602,7 +7490,7 @@ struct Outer
 }
 ";
             // NB: not unsafe
-            var compilation = CreateCompilation(text);
+            var compilation = CreateCompilation(text, parseOptions: new CSharpParseOptions(LanguageVersion.CSharp7_3));
             var tree = compilation.SyntaxTrees.Single();
             var model = compilation.GetSemanticModel(tree);
 

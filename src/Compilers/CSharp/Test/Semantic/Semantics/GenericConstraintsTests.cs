@@ -3860,9 +3860,9 @@ public struct MyStruct<T>
 ";
             CreateCompilation(code, options: TestOptions.UnsafeReleaseDll, parseOptions: TestOptions.Regular7_3)
                 .VerifyDiagnostics(
-                // (8,20): error CS8652: The feature 'unmanaged constructed types' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
-                //         var size = sizeof(MyStruct<int>);
-                Diagnostic(ErrorCode.ERR_FeatureInPreview, "sizeof(MyStruct<int>)").WithArguments("unmanaged constructed types").WithLocation(8, 20)
+                    // (8,20): error CS8652: The feature 'sizeof any ValueType' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                    //         var size = sizeof(MyStruct<int>);
+                    Diagnostic(ErrorCode.ERR_FeatureInPreview, "sizeof(MyStruct<int>)").WithArguments("sizeof any ValueType").WithLocation(8, 20)
                 );
 
             CreateCompilation(code, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics();

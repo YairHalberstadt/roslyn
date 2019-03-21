@@ -197,7 +197,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         ERR_AmbigMember = 229,
         ERR_BadForeachDecl = 230,
         ERR_ParamsLast = 231,
-        ERR_SizeofUnsafe = 233,
+        //ERR_SizeofUnsafe = 233,
         ERR_DottedTypeNameNotFoundInNS = 234,
         ERR_FieldInitRefNonstatic = 236,
         ERR_SealedNonOverride = 238,
@@ -1598,6 +1598,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         ERR_PossibleAsyncIteratorWithoutYieldOrAwait = 8420,
         ERR_StaticLocalFunctionCannotCaptureVariable = 8421,
         ERR_StaticLocalFunctionCannotCaptureThis = 8422,
+        ERR_SizeOfReferenceType = 8424,
 
         #region diagnostics introduced for recursive patterns
         // 8501, // available

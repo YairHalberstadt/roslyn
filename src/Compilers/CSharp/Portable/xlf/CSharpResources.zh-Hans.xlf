@@ -277,6 +277,11 @@
         <target state="translated">单元素解构模式需要一些其他语法来消除歧义。建议在关闭 paren ")" 之后添加放弃指示符 "_"。</target>
         <note />
       </trans-unit>
+      <trans-unit id="ERR_SizeOfReferenceType">
+        <source>'sizeof({0})' is not allowed as '{0}' is known to be a reference type. Use 'System.IntPtr.Size' instead.</source>
+        <target state="new">'sizeof({0})' is not allowed as '{0}' is known to be a reference type. Use 'System.IntPtr.Size' instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ERR_StaticLocalFunctionCannotCaptureThis">
         <source>A static local function cannot contain a reference to 'this' or 'base'.</source>
         <target state="translated">静态本地函数不能包含对 "this" 或 "base" 的引用。</target>
@@ -746,6 +751,16 @@
       <trans-unit id="IDS_FeatureRefReassignment">
         <source>ref reassignment</source>
         <target state="translated">ref 赋值</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IDS_FeatureSizeOfAnyValueType">
+        <source>sizeof any ValueType</source>
+        <target state="new">sizeof any ValueType</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IDS_FeatureSizeOfInAnyContext">
+        <source>sizeof in any context</source>
+        <target state="new">sizeof in any context</target>
         <note />
       </trans-unit>
       <trans-unit id="IDS_FeatureStackAllocInitializer">
@@ -1926,11 +1941,6 @@
       <trans-unit id="ERR_EventPropertyInInterface">
         <source>An event in an interface cannot have add or remove accessors</source>
         <target state="translated">接口中的事件不能具有 add 或 remove 访问器</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ERR_SizeofUnsafe">
-        <source>'{0}' does not have a predefined size, therefore sizeof can only be used in an unsafe context</source>
-        <target state="needs-review-translation">'“{0}”没有预定义的大小，因此 sizeof 只能在不安全的上下文中使用(请考虑使用 System.Runtime.InteropServices.Marshal.SizeOf)</target>
         <note />
       </trans-unit>
       <trans-unit id="ERR_BadEventUsage">

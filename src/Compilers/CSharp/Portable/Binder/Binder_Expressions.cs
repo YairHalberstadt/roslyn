@@ -1143,13 +1143,62 @@ namespace Microsoft.CodeAnalysis.CSharp
             AliasSymbol alias;
             TypeSymbol type = this.BindType(typeSyntax, diagnostics, out alias).Type;
 
-            bool typeHasErrors = type.IsErrorType() || CheckManagedAddr(type, node, diagnostics);
+            var dummyDiagnostics = DiagnosticBag.GetInstance();
+            bool typeHasErrors =
+                type.IsErrorType()
+                || CheckCanBeValueType(type, node, diagnostics)
+                || (CheckManagedAddr(type, node, dummyDiagnostics) && !CheckFeatureAvailability(node, MessageID.IDS_FeatureSizeOfAnyValueType, diagnostics));
 
             BoundTypeExpression boundType = new BoundTypeExpression(typeSyntax, alias, type, typeHasErrors);
             ConstantValue constantValue = GetConstantSizeOf(type);
-            bool hasErrors = ReferenceEquals(constantValue, null) && ReportUnsafeIfNotAllowed(node, diagnostics, type);
+            bool hasErrors = ReferenceEquals(constantValue, null) && ReportUnsafeIfNotAllowed(node, dummyDiagnostics) && !CheckFeatureAvailability(node, MessageID.IDS_FeatureSizeOfInAnyContext, diagnostics);
             return new BoundSizeOfOperator(node, boundType, constantValue,
-                this.GetSpecialType(SpecialType.System_Int32, diagnostics, node), hasErrors);
+                this.GetSpecialType(SpecialType.System_Int32, diagnostics, node));
+        }
+
+
+        /// <returns>true if a type can be guaranteed to be a reference type, otherwise false.</returns>
+        private static bool CheckCanBeValueType(TypeSymbol type, SyntaxNode node, DiagnosticBag diagnostics)
+        {
+            if (CheckCanBeValueTypeInternal(type))
+            {
+                diagnostics.Add(ErrorCode.ERR_SizeOfReferenceType, node.Location, type);
+                return true;
+            }
+            return false;
+
+            bool CheckCanBeValueTypeInternal(TypeSymbol typeInternal)
+            {
+                if (typeInternal.IsValueType || typeInternal.IsErrorType())
+                    return false;
+                if (typeInternal.IsReferenceType)
+                    return true;
+                if (typeInternal.IsTypeParameter())
+                {
+                    var typeParameter = (TypeParameterSymbol)typeInternal;
+                    var constraints = typeParameter.ConstraintTypesNoUseSiteDiagnostics;
+                    foreach (var constraint in constraints)
+                    {
+                        switch (constraint.SpecialType)
+                        {
+                            case SpecialType.System_Object:
+                            case SpecialType.System_Enum:
+                            case SpecialType.System_ValueType:
+                                continue;
+                            default:
+                                if (CheckCanBeValueTypeInternal(constraint.Type))
+                                {
+                                    return true;
+                                }
+
+                                break;
+                        }
+                    }
+                    return false;
+                }
+
+                throw ExceptionUtilities.Unreachable;
+            }
         }
 
         /// <returns>true if managed type-related errors were found, otherwise false.</returns>

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
@@ -35,7 +35,36 @@ ISizeOfOperation (OperationKind.SizeOf, Type: System.Int32, Constant: 4) (Syntax
 
         [CompilerTrait(CompilerFeature.IOperation)]
         [Fact]
-        public void TestSizeOfExpression_NonPrimitiveTypeArgument()
+        public void TestSizeOfExpression_ManagedStructTypeArgument()
+        {
+            string source = @"
+using System;
+
+struct S
+{
+    string Str;
+    void M(int i)
+    {
+        i = /*<bind>*/sizeof(S)/*</bind>*/;
+    }
+}
+";
+            string expectedOperationTree = @"
+ISizeOfOperation (OperationKind.SizeOf, Type: System.Int32) (Syntax: 'sizeof(S)')
+  TypeOperand: S
+";
+            var expectedDiagnostics = new DiagnosticDescription[] {
+                // file.cs(6,12): warning CS0169: The field 'S.Str' is never used
+                //     string Str;
+                Diagnostic(ErrorCode.WRN_UnreferencedField, "Str").WithArguments("S.Str").WithLocation(6, 12)
+            };
+
+            VerifyOperationTreeAndDiagnosticsForTest<SizeOfExpressionSyntax>(source, expectedOperationTree, expectedDiagnostics);
+        }
+
+        [CompilerTrait(CompilerFeature.IOperation)]
+        [Fact]
+        public void TestSizeOfExpression_ReferenceTypeArgument()
         {
             string source = @"
 using System;
@@ -53,13 +82,35 @@ ISizeOfOperation (OperationKind.SizeOf, Type: System.Int32, IsInvalid) (Syntax: 
   TypeOperand: C
 ";
             var expectedDiagnostics = new DiagnosticDescription[] {
-                // CS0208: Cannot take the address of, get the size of, or declare a pointer to a managed type ('C')
+                // file.cs(8,23): error CS8424: 'sizeof(C)' is not allowed as 'C' is known to be a reference type.
                 //         i = /*<bind>*/sizeof(C)/*</bind>*/;
-                Diagnostic(ErrorCode.ERR_ManagedAddr, "sizeof(C)").WithArguments("C").WithLocation(8, 23),
-                // CS0233: 'C' does not have a predefined size, therefore sizeof can only be used in an unsafe context (consider using System.Runtime.InteropServices.Marshal.SizeOf)
-                //         i = /*<bind>*/sizeof(C)/*</bind>*/;
-                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(C)").WithArguments("C").WithLocation(8, 23)
+                Diagnostic(ErrorCode.ERR_SizeOfReferenceType, "sizeof(C)").WithArguments("C").WithLocation(8, 23)
             };
+
+            VerifyOperationTreeAndDiagnosticsForTest<SizeOfExpressionSyntax>(source, expectedOperationTree, expectedDiagnostics);
+        }
+
+        [CompilerTrait(CompilerFeature.IOperation)]
+        [Fact]
+        public void TestSizeOfExpression_GenericTypeArgument()
+        {
+            string source = @"
+using System;
+
+class C
+{
+    void M<T>(int i)
+    {
+        i = /*<bind>*/sizeof(T)/*</bind>*/;
+    }
+}
+";
+            string expectedOperationTree = @"
+ISizeOfOperation (OperationKind.SizeOf, Type: System.Int32) (Syntax: 'sizeof(T)')
+  TypeOperand: T
+";
+
+            var expectedDiagnostics = DiagnosticDescription.None;
 
             VerifyOperationTreeAndDiagnosticsForTest<SizeOfExpressionSyntax>(source, expectedOperationTree, expectedDiagnostics);
         }
@@ -111,9 +162,6 @@ ISizeOfOperation (OperationKind.SizeOf, Type: System.Int32, IsInvalid) (Syntax: 
                 // CS0246: The type or namespace name 'UndefinedType' could not be found (are you missing a using directive or an assembly reference?)
                 //         i = /*<bind>*/sizeof(UndefinedType)/*</bind>*/;
                 Diagnostic(ErrorCode.ERR_SingleTypeNameNotFound, "UndefinedType").WithArguments("UndefinedType").WithLocation(8, 30),
-                // CS0233: 'UndefinedType' does not have a predefined size, therefore sizeof can only be used in an unsafe context (consider using System.Runtime.InteropServices.Marshal.SizeOf)
-                //         i = /*<bind>*/sizeof(UndefinedType)/*</bind>*/;
-                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(UndefinedType)").WithArguments("UndefinedType").WithLocation(8, 23)
             };
 
             VerifyOperationTreeAndDiagnosticsForTest<SizeOfExpressionSyntax>(source, expectedOperationTree, expectedDiagnostics);
@@ -142,9 +190,6 @@ ISizeOfOperation (OperationKind.SizeOf, Type: System.Int32, IsInvalid) (Syntax: 
                 // CS0118: 'i' is a variable but is used like a type
                 //         i = /*<bind>*/sizeof(i)/*</bind>*/;
                 Diagnostic(ErrorCode.ERR_BadSKknown, "i").WithArguments("i", "variable", "type").WithLocation(8, 30),
-                // CS0233: 'i' does not have a predefined size, therefore sizeof can only be used in an unsafe context (consider using System.Runtime.InteropServices.Marshal.SizeOf)
-                //         i = /*<bind>*/sizeof(i)/*</bind>*/;
-                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(i)").WithArguments("i").WithLocation(8, 23)
             };
 
             VerifyOperationTreeAndDiagnosticsForTest<SizeOfExpressionSyntax>(source, expectedOperationTree, expectedDiagnostics);
@@ -186,9 +231,6 @@ IInvalidOperation (OperationKind.Invalid, Type: ?, IsInvalid) (Syntax: 'sizeof(M
                 // CS0246: The type or namespace name 'M2' could not be found (are you missing a using directive or an assembly reference?)
                 //         i = /*<bind>*/sizeof(M2()/*</bind>*/);
                 Diagnostic(ErrorCode.ERR_SingleTypeNameNotFound, "M2").WithArguments("M2").WithLocation(8, 30),
-                // CS0233: 'M2' does not have a predefined size, therefore sizeof can only be used in an unsafe context (consider using System.Runtime.InteropServices.Marshal.SizeOf)
-                //         i = /*<bind>*/sizeof(M2()/*</bind>*/);
-                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(M2").WithArguments("M2").WithLocation(8, 23)
             };
 
             VerifyOperationTreeAndDiagnosticsForTest<InvocationExpressionSyntax>(source, expectedOperationTree, expectedDiagnostics);
@@ -217,9 +259,6 @@ ISizeOfOperation (OperationKind.SizeOf, Type: System.Int32, IsInvalid) (Syntax: 
                 // CS1031: Type expected
                 //         i = /*<bind>*/sizeof()/*</bind>*/;
                 Diagnostic(ErrorCode.ERR_TypeExpected, ")").WithLocation(8, 30),
-                // CS0233: '?' does not have a predefined size, therefore sizeof can only be used in an unsafe context (consider using System.Runtime.InteropServices.Marshal.SizeOf)
-                //         i = /*<bind>*/sizeof()/*</bind>*/;
-                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof()").WithArguments("?").WithLocation(8, 23)
             };
 
             VerifyOperationTreeAndDiagnosticsForTest<SizeOfExpressionSyntax>(source, expectedOperationTree, expectedDiagnostics);

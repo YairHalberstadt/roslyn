@@ -21,16 +21,15 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
 
         /// <returns>True if a diagnostic was reported</returns>
-        internal bool ReportUnsafeIfNotAllowed(SyntaxNode node, DiagnosticBag diagnostics, TypeSymbol sizeOfTypeOpt = null)
+        internal bool ReportUnsafeIfNotAllowed(SyntaxNode node, DiagnosticBag diagnostics)
         {
-            Debug.Assert((node.Kind() == SyntaxKind.SizeOfExpression) == ((object)sizeOfTypeOpt != null), "Should have a type for (only) sizeof expressions.");
-            return ReportUnsafeIfNotAllowed(node.Location, diagnostics, sizeOfTypeOpt);
+            return ReportUnsafeIfNotAllowed(node.Location, diagnostics);
         }
 
         /// <returns>True if a diagnostic was reported</returns>
-        internal bool ReportUnsafeIfNotAllowed(Location location, DiagnosticBag diagnostics, TypeSymbol sizeOfTypeOpt = null)
+        internal bool ReportUnsafeIfNotAllowed(Location location, DiagnosticBag diagnostics)
         {
-            var diagnosticInfo = GetUnsafeDiagnosticInfo(sizeOfTypeOpt);
+            var diagnosticInfo = GetUnsafeDiagnosticInfo();
             if (diagnosticInfo == null)
             {
                 return false;
@@ -40,7 +39,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return true;
         }
 
-        private CSDiagnosticInfo GetUnsafeDiagnosticInfo(TypeSymbol sizeOfTypeOpt)
+        private CSDiagnosticInfo GetUnsafeDiagnosticInfo()
         {
             if (this.Flags.Includes(BinderFlags.SuppressUnsafeDiagnostics))
             {
@@ -54,9 +53,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else if (!this.InUnsafeRegion)
             {
-                return ((object)sizeOfTypeOpt == null)
-                    ? new CSDiagnosticInfo(ErrorCode.ERR_UnsafeNeeded)
-                    : new CSDiagnosticInfo(ErrorCode.ERR_SizeofUnsafe, sizeOfTypeOpt);
+                return new CSDiagnosticInfo(ErrorCode.ERR_UnsafeNeeded);
             }
             else
             {

@@ -277,6 +277,11 @@
         <target state="translated">Un modèle de déconstruction d'un seul élément nécessite une autre syntaxe pour la désambiguïsation. Il est recommandé d'ajouter un désignateur d'abandon '_' après la parenthèse de fermeture ')'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ERR_SizeOfReferenceType">
+        <source>'sizeof({0})' is not allowed as '{0}' is known to be a reference type. Use 'System.IntPtr.Size' instead.</source>
+        <target state="new">'sizeof({0})' is not allowed as '{0}' is known to be a reference type. Use 'System.IntPtr.Size' instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ERR_StaticLocalFunctionCannotCaptureThis">
         <source>A static local function cannot contain a reference to 'this' or 'base'.</source>
         <target state="translated">Une fonction locale statique ne peut pas contenir de référence à 'this' ou 'base'.</target>
@@ -746,6 +751,16 @@
       <trans-unit id="IDS_FeatureRefReassignment">
         <source>ref reassignment</source>
         <target state="translated">réassignation de référence</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IDS_FeatureSizeOfAnyValueType">
+        <source>sizeof any ValueType</source>
+        <target state="new">sizeof any ValueType</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IDS_FeatureSizeOfInAnyContext">
+        <source>sizeof in any context</source>
+        <target state="new">sizeof in any context</target>
         <note />
       </trans-unit>
       <trans-unit id="IDS_FeatureStackAllocInitializer">
@@ -2661,11 +2676,6 @@
       <trans-unit id="ERR_ParamsLast">
         <source>A params parameter must be the last parameter in a formal parameter list</source>
         <target state="translated">Un paramètre params doit être le dernier paramètre dans une liste de paramètres formels</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ERR_SizeofUnsafe">
-        <source>'{0}' does not have a predefined size, therefore sizeof can only be used in an unsafe context</source>
-        <target state="needs-review-translation">'{0}' n'a pas de taille prédéfinie ; c'est pourquoi sizeof ne peut être utilisé que dans un contexte unsafe (utilisez System.Runtime.InteropServices.Marshal.SizeOf)</target>
         <note />
       </trans-unit>
       <trans-unit id="ERR_DottedTypeNameNotFoundInNS">

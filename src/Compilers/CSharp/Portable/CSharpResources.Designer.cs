@@ -9448,11 +9448,11 @@ namespace Microsoft.CodeAnalysis.CSharp {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to &apos;{0}&apos; does not have a predefined size, therefore sizeof can only be used in an unsafe context.
+        ///   Looks up a localized string similar to &apos;sizeof({0})&apos; is not allowed as &apos;{0}&apos; is known to be a reference type. Use &apos;System.IntPtr.Size&apos; instead..
         /// </summary>
-        internal static string ERR_SizeofUnsafe {
+        internal static string ERR_SizeOfReferenceType {
             get {
-                return ResourceManager.GetString("ERR_SizeofUnsafe", resourceCulture);
+                return ResourceManager.GetString("ERR_SizeOfReferenceType", resourceCulture);
             }
         }
         
@@ -11515,6 +11515,24 @@ namespace Microsoft.CodeAnalysis.CSharp {
         internal static string IDS_FeatureRefStructs {
             get {
                 return ResourceManager.GetString("IDS_FeatureRefStructs", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to sizeof any ValueType.
+        /// </summary>
+        internal static string IDS_FeatureSizeOfAnyValueType {
+            get {
+                return ResourceManager.GetString("IDS_FeatureSizeOfAnyValueType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to sizeof in any context.
+        /// </summary>
+        internal static string IDS_FeatureSizeOfInAnyContext {
+            get {
+                return ResourceManager.GetString("IDS_FeatureSizeOfInAnyContext", resourceCulture);
             }
         }
         

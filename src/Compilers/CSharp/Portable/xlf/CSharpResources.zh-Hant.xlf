@@ -277,6 +277,11 @@
         <target state="translated">單一元素解構模式需要一些其他語法才能使其明確。建議在右括弧 ')' 後新增捨棄指示項 '_'。</target>
         <note />
       </trans-unit>
+      <trans-unit id="ERR_SizeOfReferenceType">
+        <source>'sizeof({0})' is not allowed as '{0}' is known to be a reference type. Use 'System.IntPtr.Size' instead.</source>
+        <target state="new">'sizeof({0})' is not allowed as '{0}' is known to be a reference type. Use 'System.IntPtr.Size' instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ERR_StaticLocalFunctionCannotCaptureThis">
         <source>A static local function cannot contain a reference to 'this' or 'base'.</source>
         <target state="translated">靜態區域函式不可包含對 'this' 或 'base' 的參考。</target>
@@ -745,6 +750,16 @@
       <trans-unit id="IDS_FeatureRefReassignment">
         <source>ref reassignment</source>
         <target state="translated">參考重新指派</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IDS_FeatureSizeOfAnyValueType">
+        <source>sizeof any ValueType</source>
+        <target state="new">sizeof any ValueType</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IDS_FeatureSizeOfInAnyContext">
+        <source>sizeof in any context</source>
+        <target state="new">sizeof in any context</target>
         <note />
       </trans-unit>
       <trans-unit id="IDS_FeatureStackAllocInitializer">
@@ -2660,11 +2675,6 @@
       <trans-unit id="ERR_ParamsLast">
         <source>A params parameter must be the last parameter in a formal parameter list</source>
         <target state="translated">params 參數必須是型式參數清單中的最後一個參數</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ERR_SizeofUnsafe">
-        <source>'{0}' does not have a predefined size, therefore sizeof can only be used in an unsafe context</source>
-        <target state="needs-review-translation">'{0}' 沒有預先定義的大小，因此 sizeof 只能使用於 unsafe 內容 (請考慮使用 System.Runtime.InteropServices.Marshal.SizeOf)。</target>
         <note />
       </trans-unit>
       <trans-unit id="ERR_DottedTypeNameNotFoundInNS">

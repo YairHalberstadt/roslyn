@@ -7762,26 +7762,22 @@ public class MyClass
             CreateCompilation(text, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
                 // (25,9): error CS0208: Cannot take the address of, get the size of, or declare a pointer to a managed type ('myClass')
                 //         myClass* s2 = &s;    // CS0208
-                Diagnostic(ErrorCode.ERR_ManagedAddr, "myClass*").WithArguments("myClass"),
+                Diagnostic(ErrorCode.ERR_ManagedAddr, "myClass*").WithArguments("myClass").WithLocation(25, 9),
                 // (25,23): error CS0208: Cannot take the address of, get the size of, or declare a pointer to a managed type ('myClass')
                 //         myClass* s2 = &s;    // CS0208
-                Diagnostic(ErrorCode.ERR_ManagedAddr, "&s").WithArguments("myClass"),
-                // (28,17): error CS0208: Cannot take the address of, get the size of, or declare a pointer to a managed type ('myProblemStruct')
-                //         int i = sizeof(myProblemStruct); //CS0208
-                Diagnostic(ErrorCode.ERR_ManagedAddr, "sizeof(myProblemStruct)").WithArguments("myProblemStruct"),
-
-                // (9,12): warning CS0169: The field 'myProblemStruct.s' is never used
-                //     string s;
-                Diagnostic(ErrorCode.WRN_UnreferencedField, "s").WithArguments("myProblemStruct.s"),
+                Diagnostic(ErrorCode.ERR_ManagedAddr, "&s").WithArguments("myClass").WithLocation(25, 23),
                 // (10,11): warning CS0169: The field 'myProblemStruct.f' is never used
                 //     float f;
-                Diagnostic(ErrorCode.WRN_UnreferencedField, "f").WithArguments("myProblemStruct.f"),
-                // (15,9): warning CS0169: The field 'myGoodStruct.i' is never used
-                //     int i;
-                Diagnostic(ErrorCode.WRN_UnreferencedField, "i").WithArguments("myGoodStruct.i"),
+                Diagnostic(ErrorCode.WRN_UnreferencedField, "f").WithArguments("myProblemStruct.f").WithLocation(10, 11),
+                // (9,12): warning CS0169: The field 'myProblemStruct.s' is never used
+                //     string s;
+                Diagnostic(ErrorCode.WRN_UnreferencedField, "s").WithArguments("myProblemStruct.s").WithLocation(9, 12),
                 // (16,11): warning CS0169: The field 'myGoodStruct.f' is never used
                 //     float f;
-                Diagnostic(ErrorCode.WRN_UnreferencedField, "f").WithArguments("myGoodStruct.f"));
+                Diagnostic(ErrorCode.WRN_UnreferencedField, "f").WithArguments("myGoodStruct.f").WithLocation(16, 11),
+                // (15,9): warning CS0169: The field 'myGoodStruct.i' is never used
+                //     int i;
+                Diagnostic(ErrorCode.WRN_UnreferencedField, "i").WithArguments("myGoodStruct.i").WithLocation(15, 9));
         }
 
         [Fact]
@@ -8191,40 +8187,6 @@ class MyClass
 ";
             DiagnosticsUtils.VerifyErrorsAndGetCompilationWithMscorlib(text,
                 new ErrorDescription[] { new ErrorDescription { Code = (int)ErrorCode.ERR_AmbigMember, Line = 28, Column = 11 } });
-        }
-
-        [Fact]
-        public void CS0233ERR_SizeofUnsafe()
-        {
-            var text = @"
-using System;
-using System.Runtime.InteropServices;
-
-[StructLayout(LayoutKind.Sequential)]
-public struct S
-{
-    public int a;
-}
-
-public class MyClass
-{
-    public static void Main()
-    {
-        S myS = new S();
-        Console.WriteLine(sizeof(S));   // CS0233
-        // Try the following line instead:
-        // Console.WriteLine(Marshal.SizeOf(myS));
-   }
-}
-";
-            CreateCompilation(text).VerifyDiagnostics(
-                // (16,27): error CS0233: 'S' does not have a predefined size, therefore sizeof can only be used in an unsafe context (consider using System.Runtime.InteropServices.Marshal.SizeOf)
-                //         Console.WriteLine(sizeof(S));   // CS0233
-                Diagnostic(ErrorCode.ERR_SizeofUnsafe, "sizeof(S)").WithArguments("S"),
-
-                // (15,11): warning CS0219: The variable 'myS' is assigned but its value is never used
-                //         S myS = new S();
-                Diagnostic(ErrorCode.WRN_UnreferencedVarAssg, "myS").WithArguments("myS"));
         }
 
         [Fact]
