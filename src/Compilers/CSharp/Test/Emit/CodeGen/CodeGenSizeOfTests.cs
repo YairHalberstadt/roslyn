@@ -218,10 +218,13 @@ class C
         PrintSize<int>();
         PrintSize<S1>();
         PrintSize<string>();
+        PrintSize<I>();
     }
 
     static void PrintSize<T>() => Console.WriteLine(sizeof(T));
 }
+
+interface I {}
 
 struct S1
 {
@@ -238,6 +241,7 @@ struct S1
 4
 4
 4
+4
 ".Trim();
             }
             else
@@ -246,17 +250,19 @@ struct S1
 4
 8
 8
+8
 ".Trim();
             }
 
             CompileAndVerify(text, expectedOutput: expectedOutput).VerifyIL("C.Main", @"
 {
-  // Code size       16 (0x10)
+  // Code size       21 (0x15)
   .maxstack  0
   IL_0000:  call       ""void C.PrintSize<int>()""
   IL_0005:  call       ""void C.PrintSize<S1>()""
   IL_000a:  call       ""void C.PrintSize<string>()""
-  IL_000f:  ret
+  IL_000f:  call       ""void C.PrintSize<I>()""
+  IL_0014:  ret
 }
 ").VerifyIL("C.PrintSize<T>", @"
 {

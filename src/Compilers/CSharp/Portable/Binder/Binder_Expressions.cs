@@ -1146,7 +1146,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var dummyDiagnostics = DiagnosticBag.GetInstance();
             bool typeHasErrors =
                 type.IsErrorType()
-                || CheckCanBeValueType(type, node, diagnostics)
+                || CheckIsReferenceType(type, node, diagnostics)
                 || (CheckManagedAddr(type, node, dummyDiagnostics) && !CheckFeatureAvailability(node, MessageID.IDS_FeatureSizeOfAnyValueType, diagnostics));
 
             BoundTypeExpression boundType = new BoundTypeExpression(typeSyntax, alias, type, typeHasErrors);
@@ -1158,17 +1158,19 @@ namespace Microsoft.CodeAnalysis.CSharp
 
 
         /// <returns>true if a type can be guaranteed to be a reference type, otherwise false.</returns>
-        private static bool CheckCanBeValueType(TypeSymbol type, SyntaxNode node, DiagnosticBag diagnostics)
+        private static bool CheckIsReferenceType(TypeSymbol type, SyntaxNode node, DiagnosticBag diagnostics)
         {
-            if (CheckCanBeValueTypeInternal(type))
+            if (CheckIsReferenceType(type, out _))
             {
                 diagnostics.Add(ErrorCode.ERR_SizeOfReferenceType, node.Location, type);
                 return true;
             }
             return false;
 
-            bool CheckCanBeValueTypeInternal(TypeSymbol typeInternal)
+            bool CheckIsReferenceType(TypeSymbol typeInternal, out bool isConstrainedToClass)
             {
+                isConstrainedToClass = true;
+
                 if (typeInternal.IsValueType || typeInternal.IsErrorType())
                     return false;
                 if (typeInternal.IsReferenceType)
@@ -1186,10 +1188,20 @@ namespace Microsoft.CodeAnalysis.CSharp
                             case SpecialType.System_ValueType:
                                 continue;
                             default:
-                                if (CheckCanBeValueTypeInternal(constraint.Type))
+                                if (constraint.Type.IsInterfaceType() || constraint.Type.IsStructType())
+                                    continue;
+                                if (constraint.Type.IsClassType())
+                                {
+                                    isConstrainedToClass = true;
+                                    return true;
+                                }
+
+                                if (CheckIsReferenceType(constraint.Type, out var isConstrainedToClass) && !isConstrainedToClass)
                                 {
                                     return true;
                                 }
+
+                                return false;
 
                                 break;
                         }
