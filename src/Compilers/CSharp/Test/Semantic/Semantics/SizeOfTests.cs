@@ -374,6 +374,24 @@ class Program<T, U> where T : U where U : Class
         }
 
         [Fact]
+        public void SizeOfTypeParameterConstrainedToTypeParameterConstrainedToClassFollowedByTypeParameterConstrainesToReferenceType()
+        {
+            string text = @"
+using System.Collections.Generic;
+class Program<T, U, V> where T : U, V where U : Class, where V : List<int>
+{
+    int F1 = sizeof(T);
+}
+";
+            // This should be legal, since U could be object
+
+            CreateCompilation(text).VerifyDiagnostics(
+                // (5,14): error CS8424: 'sizeof(T)' is not allowed as 'T' is known to be a reference type.
+                //     int F1 = sizeof(T);
+                Diagnostic(ErrorCode.ERR_SizeOfReferenceType, "sizeof(T)").WithArguments("T").WithLocation(5, 14));
+        }
+
+        [Fact]
         public void SizeOfTypeParameterConstrainedToTypeParameterConstrainedToInterface()
         {
             string text = @"

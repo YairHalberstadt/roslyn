@@ -1169,7 +1169,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             bool CheckIsReferenceType(TypeSymbol typeInternal, out bool isConstrainedToClass)
             {
-                isConstrainedToClass = true;
+                isConstrainedToClass = false;
 
                 if (typeInternal.IsValueType || typeInternal.IsErrorType())
                     return false;
@@ -1189,24 +1189,25 @@ namespace Microsoft.CodeAnalysis.CSharp
                                 continue;
                             default:
                                 if (constraint.Type.IsInterfaceType() || constraint.Type.IsStructType())
+                                {
                                     continue;
+                                }
+
                                 if (constraint.Type.IsClassType())
                                 {
                                     isConstrainedToClass = true;
-                                    return true;
+                                    continue;
                                 }
 
-                                if (CheckIsReferenceType(constraint.Type, out var isConstrainedToClass) && !isConstrainedToClass)
+                                if (CheckIsReferenceType(constraint.Type, out var constraintIsConstrainedToClass) && !constraintIsConstrainedToClass)
                                 {
+                                    isConstrainedToClass = false;
                                     return true;
                                 }
-
-                                return false;
-
-                                break;
+                                continue;
                         }
                     }
-                    return false;
+                    return isConstrainedToClass;
                 }
 
                 throw ExceptionUtilities.Unreachable;
