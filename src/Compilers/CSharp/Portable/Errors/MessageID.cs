@@ -176,7 +176,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         IDS_FeatureNameShadowingInNestedFunctions = MessageBase + 12756,
         IDS_FeatureUnmanagedConstructedTypes = MessageBase + 12757,
         IDS_FeatureSizeOfInAnyContext = MessageBase + 12759,
-        IDS_FeatureSizeOfAnyValueType = MessageBase + 12760
+        IDS_FeatureSizeOfAnyValueType = MessageBase + 12760,
 
         IDS_DefaultInterfaceImplementation = MessageBase + 12800,
         IDS_BaseTypeInBaseExpression = MessageBase + 12801,

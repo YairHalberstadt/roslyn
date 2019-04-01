@@ -1175,8 +1175,6 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 if (typeInternal.IsValueType || typeInternal.IsErrorType())
                     return false;
-                if (typeInternal.IsReferenceType)
-                    return true;
                 if (typeInternal.IsTypeParameter())
                 {
                     var typeParameter = (TypeParameterSymbol)typeInternal;
@@ -1190,27 +1188,22 @@ namespace Microsoft.CodeAnalysis.CSharp
                             case SpecialType.System_ValueType:
                                 continue;
                             default:
-                                if (constraint.Type.IsInterfaceType() || constraint.Type.IsStructType())
-                                {
+                                if (constraint.Type.IsInterfaceType())
                                     continue;
-                                }
-
-                                if (constraint.Type.IsClassType())
-                                {
-                                    isConstrainedToClass = true;
-                                    continue;
-                                }
 
                                 if (CheckIsReferenceType(constraint.Type, out var constraintIsConstrainedToClass) && !constraintIsConstrainedToClass)
-                                {
-                                    isConstrainedToClass = false;
                                     return true;
-                                }
+
                                 continue;
                         }
                     }
-                    return isConstrainedToClass;
+
+                    // If there are no constraints which make typeInternal a refrence type, but it is a reference type, it must have a class constraint.
+                    isConstrainedToClass = typeInternal.IsReferenceType;
+                    return typeInternal.IsReferenceType;
                 }
+                if (typeInternal.IsReferenceType)
+                    return true;
 
                 throw ExceptionUtilities.Unreachable;
             }

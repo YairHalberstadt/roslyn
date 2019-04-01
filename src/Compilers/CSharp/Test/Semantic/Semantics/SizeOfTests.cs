@@ -201,15 +201,16 @@ class Program
         public void SizeOfInterface()
         {
             string text = @"
+using System;
 class Program
 {
     int F1 = sizeof(IComparable);
 }
 ";
             CreateCompilation(text).VerifyDiagnostics(
-                // (4,14): error CS8424: 'sizeof(object)' is not allowed as 'object' is known to be a reference type.
-                //     int F1 = sizeof(object);
-                Diagnostic(ErrorCode.ERR_SizeOfReferenceType, "sizeof(object)").WithArguments("object").WithLocation(4, 14));
+                // (5,14): error CS8424: 'sizeof(IComparable)' is not allowed as 'IComparable' is known to be a reference type. Use 'System.IntPtr.Size' instead.
+                //     int F1 = sizeof(IComparable);
+                Diagnostic(ErrorCode.ERR_SizeOfReferenceType, "sizeof(IComparable)").WithArguments("System.IComparable").WithLocation(5, 14));
         }
 
         [Fact]
@@ -245,13 +246,17 @@ class Program<T> where T : class
     int F1 = sizeof(T);
 }
 ";
-            CreateCompilation(text).VerifyDiagnostics();
+            CreateCompilation(text).VerifyDiagnostics(
+                // (4,14): error CS8424: 'sizeof(T)' is not allowed as 'T' is known to be a reference type. Use 'System.IntPtr.Size' instead.
+                //     int F1 = sizeof(T);
+                Diagnostic(ErrorCode.ERR_SizeOfReferenceType, "sizeof(T)").WithArguments("T").WithLocation(4, 14));
         }
 
         [Fact]
         public void SizeOfTypeParameterConstrainedToInterface()
         {
             string text = @"
+using System;
 class Program<T> where T : IComparable
 {
     int F1 = sizeof(T);
@@ -359,18 +364,14 @@ class Program<T, U> where T : U
         public void SizeOfTypeParameterConstrainedToTypeParameterConstrainedToClass()
         {
             string text = @"
-using System.Collections.Generic;
-class Program<T, U> where T : U where U : Class
+class Program<T, U> where T : U where U : class
 {
     int F1 = sizeof(T);
 }
 ";
             // This should be legal, since U could be object
 
-            CreateCompilation(text).VerifyDiagnostics(
-                // (5,14): error CS8424: 'sizeof(T)' is not allowed as 'T' is known to be a reference type.
-                //     int F1 = sizeof(T);
-                Diagnostic(ErrorCode.ERR_SizeOfReferenceType, "sizeof(T)").WithArguments("T").WithLocation(5, 14));
+            CreateCompilation(text).VerifyDiagnostics();
         }
 
         [Fact]
@@ -378,13 +379,11 @@ class Program<T, U> where T : U where U : Class
         {
             string text = @"
 using System.Collections.Generic;
-class Program<T, U, V> where T : U, V where U : Class, where V : List<int>
+class Program<T, U, V> where T : U, V where U : class where V : List<int>
 {
     int F1 = sizeof(T);
 }
 ";
-            // This should be legal, since U could be object
-
             CreateCompilation(text).VerifyDiagnostics(
                 // (5,14): error CS8424: 'sizeof(T)' is not allowed as 'T' is known to be a reference type.
                 //     int F1 = sizeof(T);
@@ -395,16 +394,13 @@ class Program<T, U, V> where T : U, V where U : Class, where V : List<int>
         public void SizeOfTypeParameterConstrainedToTypeParameterConstrainedToInterface()
         {
             string text = @"
-using System.Collections.Generic;
+using System;
 class Program<T, U> where T : U where U : IComparable
 {
     int F1 = sizeof(T);
 }
 ";
-            CreateCompilation(text).VerifyDiagnostics(
-                // (5,14): error CS8424: 'sizeof(T)' is not allowed as 'T' is known to be a reference type.
-                //     int F1 = sizeof(T);
-                Diagnostic(ErrorCode.ERR_SizeOfReferenceType, "sizeof(T)").WithArguments("T").WithLocation(5, 14));
+            CreateCompilation(text).VerifyDiagnostics();
         }
 
         [Fact]
