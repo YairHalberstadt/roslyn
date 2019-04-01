@@ -177,6 +177,9 @@ namespace Microsoft.CodeAnalysis.CSharp
         IDS_FeatureUnmanagedConstructedTypes = MessageBase + 12757,
         IDS_FeatureSizeOfInAnyContext = MessageBase + 12759,
         IDS_FeatureSizeOfAnyValueType = MessageBase + 12760
+
+        IDS_DefaultInterfaceImplementation = MessageBase + 12800,
+        IDS_BaseTypeInBaseExpression = MessageBase + 12801,
     }
 
     // Message IDs may refer to strings that need to be localized.
@@ -283,6 +286,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case MessageID.IDS_FeatureUnmanagedConstructedTypes: // semantic check
                 case MessageID.IDS_FeatureSizeOfInAnyContext:
                 case MessageID.IDS_FeatureSizeOfAnyValueType:
+                case MessageID.IDS_DefaultInterfaceImplementation: // semantic check
+                case MessageID.IDS_BaseTypeInBaseExpression:
                     return LanguageVersion.CSharp8;
 
                 // C# 7.3 features.
