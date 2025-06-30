@@ -51,6 +51,32 @@ namespace Microsoft.CodeAnalysis.CSharp.Formatting
             var previousParentKind = previousToken.Parent.Kind();
             var currentParentKind = currentToken.Parent.Kind();
 
+            // ADDED: Ensure no space for '});' from lambda argument
+            if (previousToken.IsKind(SyntaxKind.CloseBraceToken) &&
+                currentToken.IsKind(SyntaxKind.CloseParenToken) &&
+                previousToken.Parent != null && currentToken.Parent != null && // Null checks for safety
+                previousToken.Parent.IsKind(SyntaxKind.Block) &&
+                previousToken.Parent.Parent is LambdaExpressionSyntax &&
+                currentToken.Parent.IsKind(SyntaxKind.ArgumentList))
+            {
+                var argumentList = (ArgumentListSyntax)currentToken.Parent;
+                var lambdaExpression = (LambdaExpressionSyntax)previousToken.Parent.Parent;
+                bool isLambdaArgument = false;
+                foreach (var arg in argumentList.Arguments)
+                {
+                    if (arg.Expression == lambdaExpression)
+                    {
+                        isLambdaArgument = true;
+                        break;
+                    }
+                }
+                if (isLambdaArgument)
+                {
+                    // Force 0 spaces for the pattern });
+                    return CreateAdjustSpacesOperation(0, AdjustSpacesOption.ForceSpaces);
+                }
+            }
+
             // For Method Declaration
             if (currentToken.IsOpenParenInParameterList() && previousKind == SyntaxKind.IdentifierToken)
             {

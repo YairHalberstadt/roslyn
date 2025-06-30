@@ -206,6 +206,44 @@ namespace Microsoft.CodeAnalysis.CSharp.Formatting
 
             var operation = nextOperation.Invoke(in previousToken, in currentToken);
 
+            // ADDED: Keep '});' together for lambdas as arguments
+            if (previousToken.IsKind(SyntaxKind.CloseBraceToken) &&
+                currentToken.IsKind(SyntaxKind.CloseParenToken) &&
+                previousToken.Parent != null && currentToken.Parent != null && // Null checks for safety
+                previousToken.Parent.IsKind(SyntaxKind.Block) && // Lambda body is a block
+                previousToken.Parent.Parent is LambdaExpressionSyntax && // Parent of block is a Lambda
+                currentToken.Parent.IsKind(SyntaxKind.ArgumentList)) // ')' is part of an ArgumentList
+            {
+                // If the lambda's block is the last part of an argument
+                // that is itself the lambda expression.
+                var argumentList = (ArgumentListSyntax)currentToken.Parent;
+                var lambdaExpression = (LambdaExpressionSyntax)previousToken.Parent.Parent;
+
+                // Check if this lambda is indeed an argument in this list
+                bool isLambdaArgument = false;
+                foreach (var arg in argumentList.Arguments)
+                {
+                    if (arg.Expression == lambdaExpression)
+                    {
+                        isLambdaArgument = true;
+                        break;
+                    }
+                }
+
+                if (isLambdaArgument)
+                {
+                    // Force 0 newlines. We want `});`
+                    // Also, preserve other aspects of the operation if one was already determined (e.g. by elastic trivia for spaces)
+                    // by only overriding line count and option if necessary.
+                    if (operation == null || operation.Lines != 0 || operation.Option != AdjustNewLinesOption.ForceLines)
+                    {
+                        return CreateAdjustNewLinesOperation(0, AdjustNewLinesOption.ForceLines);
+                    }
+                    // If an operation already exists that says 0 lines and ForceLines, let it be.
+                    return operation;
+                }
+            }
+
             // else condition is actually handled in the GetAdjustSpacesOperation()
 
             // For Object Initialization Expression
